@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>IBAN QR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --bg:#0a0f1c;
+    --surface:#121a2c;
+    --surface-2:#1a2540;
+    --border:#243154;
+    --accent:#34d399;
+    --accent-dim:#1f6f52;
+    --text:#eaf0fa;
+    --text-muted:#8b96b3;
+    --danger:#f87171;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Space Grotesk', sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:28px 16px 60px;
+  }
+  .app{width:100%; max-width:440px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; letter-spacing:0.18em; text-transform:uppercase;
+    color:var(--accent); margin:0 0 6px;
+  }
+  h1{font-size:26px; font-weight:700; margin:0 0 6px; letter-spacing:-0.01em;}
+  .sub{color:var(--text-muted); font-size:14px; line-height:1.5; margin:0 0 26px;}
+
+  /* ---------- GENERATOR VIEW ---------- */
+  #generatorView label{
+    display:block; font-family:'IBM Plex Mono', monospace; font-size:11px;
+    letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px;
+  }
+  #ibanInput{
+    width:100%; background:var(--surface); border:1px solid var(--border);
+    color:var(--text); font-family:'IBM Plex Mono', monospace; font-size:16px;
+    letter-spacing:0.04em; padding:14px 16px; border-radius:12px; outline:none;
+  }
+  #ibanInput:focus{border-color:var(--accent);}
+  .hint{font-size:12px; color:var(--text-muted); margin-top:8px;}
+  .hint.err{color:var(--danger);}
+
+  button{
+    font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:14px;
+    border:none; border-radius:11px; padding:14px 16px; cursor:pointer;
+    transition:transform 0.12s ease, opacity 0.2s ease;
+  }
+  button:active{transform:scale(0.97);}
+  button:disabled{opacity:0.4; cursor:not-allowed;}
+  .btn-primary{width:100%; background:var(--accent); color:#06251b; margin-top:16px;}
+
+  .qr-card{
+    display:none;
+    margin-top:26px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:22px;
+    text-align:center;
+  }
+  .qr-card.show{display:block; animation:rise 0.35s cubic-bezier(.2,.8,.2,1);}
+  @keyframes rise{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
+  #qrHolder{
+    display:inline-block; background:#fff; padding:14px; border-radius:14px; line-height:0;
+  }
+  .qr-link-row{
+    margin-top:16px; display:flex; gap:8px; align-items:center;
+    background:var(--surface-2); border:1px solid var(--border);
+    border-radius:10px; padding:8px 8px 8px 14px;
+  }
+  #linkText{
+    flex:1; background:transparent; border:none; color:var(--text-muted);
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; outline:none;
+    overflow:hidden; text-overflow:ellipsis;
+  }
+  .icon-btn{
+    background:var(--surface); border:1px solid var(--border); color:var(--accent);
+    border-radius:8px; padding:8px 10px; font-size:12px; flex-shrink:0;
+  }
+  .action-row{display:flex; gap:10px; margin-top:14px;}
+  .action-row button{flex:1;}
+  .btn-secondary{background:var(--surface-2); color:var(--text); border:1px solid var(--border);}
+
+  .deploy-note{
+    margin-top:22px; background:rgba(52,211,153,0.06); border:1px solid var(--accent-dim);
+    border-radius:12px; padding:14px 16px; font-size:12.5px; line-height:1.6; color:var(--text-muted);
+  }
+  .deploy-note b{color:var(--text);}
+
+  /* ---------- AUTO-COPY LANDING VIEW ---------- */
+  #copyView{display:none; text-align:center;}
+  #copyView.show{display:block;}
+  .copy-stage{
+    background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:34px 24px; margin-top:10px;
+  }
+  .status-icon{
+    width:64px; height:64px; border-radius:50%; margin:0 auto 20px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--accent-dim); border:1px solid var(--accent);
+    transition:all 0.25s ease;
+  }
+  .status-icon svg{width:30px; height:30px; color:var(--accent);}
+  .copy-status-text{font-size:15px; color:var(--text-muted); margin-bottom:18px;}
+  .copy-iban{
+    font-family:'IBM Plex Mono', monospace; font-size:20px; font-weight:500;
+    letter-spacing:0.04em; word-break:break-all; margin-bottom:22px;
+  }
+  .btn-manual{width:100%; background:var(--accent); color:#06251b;}
+  .btn-manual.copied{background:var(--accent-dim); color:var(--accent);}
+  .tap-overlay{
+    position:fixed; inset:0; background:rgba(10,15,28,0.0); z-index:5;
+  }
+  .back-link{
+    display:inline-block; margin-top:18px; color:var(--text-muted);
+    font-size:12.5px; text-decoration:underline; cursor:pointer;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ GENERATOR ============ -->
+  <div id="generatorView">
+    <p class="eyebrow">IBAN → QR → Kopyala</p>
+    <h1>IBAN QR Oluştur</h1>
+    <p class="sub">IBAN'ını gir, linkli bir QR kod oluşsun. Bu QR, telefonun kendi kamerasıyla okutulduğunda IBAN'ı otomatik olarak panoya kopyalayan bir sayfa açar — ekstra bir uygulama açmana gerek kalmaz.</p>
+
+    <label for="ibanInput">IBAN</label>
+    <input id="ibanInput" type="text" placeholder="TR33 0006 1005 1978 6457 8413 26" autocomplete="off" autocapitalize="characters">
+    <div class="hint" id="ibanHint">Boşluklu ya da boşluksuz girebilirsin.</div>
+
+    <button class="btn-primary" id="generateBtn">QR Kod Oluştur</button>
+
+    <div class="qr-card" id="qrCard">
+      <div id="qrHolder"></div>
+      <div class="qr-link-row">
+        <input id="linkText" readonly>
+        <button class="icon-btn" id="copyLinkBtn">Kopyala</button>
+      </div>
+      <div class="action-row">
+        <button class="btn-secondary" id="downloadBtn">PNG İndir</button>
+      </div>
+    </div>
+
+    <div class="deploy-note">
+      <b>Önemli:</b> Bu sayfa şu an tarayıcı önizlemesinde açık. Başka telefonların kamerasıyla okutabilmen için sayfayı gerçek bir alan adına (GitHub Pages, Vercel, Netlify vb.) yayınlaman gerekir — QR'daki link, sayfanın barındığı adrese göre otomatik oluşuyor.
+    </div>
+  </div>
+
+  <!-- ============ AUTO-COPY LANDING ============ -->
+  <div id="copyView">
+    <p class="eyebrow">IBAN Kopyalandı</p>
+    <h1 id="copyTitle">Panoya Kopyalanıyor…</h1>
+
+    <div class="copy-stage">
+      <div class="status-icon" id="statusIconWrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </div>
+      <div class="copy-status-text" id="copyStatusText">Otomatik kopyalama deneniyor…</div>
+      <div class="copy-iban" id="copyIbanText">—</div>
+      <button class="btn-manual" id="manualCopyBtn">Panoya Kopyala</button>
+    </div>
+
+    <span class="back-link" id="backLink">← QR oluşturucuya dön</span>
+  </div>
+
+</div>
+
+<script>
+  const generatorView = document.getElementById('generatorView');
+  const copyView = document.getElementById('copyView');
+
+  const params = new URLSearchParams(window.location.search);
+  const ibanParam = params.get('iban');
+
+  function cleanIban(raw){
+    return (raw || '').replace(/\s+/g, '').toUpperCase();
+  }
+  function formatIban(raw){
+    return raw.replace(/(.{4})/g, '$1 ').trim();
+  }
+  function isValidIban(raw){
+    return /^[A-Z]{2}[0-9]{2}[A-Z0-9]{10,30}$/.test(raw);
+  }
+
+  if(ibanParam){
+    // ---------- AUTO-COPY MODE ----------
+    generatorView.style.display = 'none';
+    copyView.classList.add('show');
+
+    const iban = cleanIban(ibanParam);
+    document.getElementById('copyIbanText').textContent = isValidIban(iban) ? formatIban(iban) : iban;
+    document.title = 'IBAN Kopyalandı';
+
+    const statusText = document.getElementById('copyStatusText');
+    const titleEl = document.getElementById('copyTitle');
+    const manualBtn = document.getElementById('manualCopyBtn');
+    const iconWrap = document.getElementById('statusIconWrap');
+
+    function markCopied(){
+      titleEl.textContent = 'Panoya Kopyalandı ✓';
+      statusText.textContent = 'IBAN kopyalandı, dilediğin uygulamaya yapıştırabilirsin.';
+      manualBtn.textContent = 'Tekrar Kopyala';
+      manualBtn.classList.add('copied');
+      iconWrap.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>';
+    }
+
+    async function tryCopy(){
+      try{
+        await navigator.clipboard.writeText(iban);
+        markCopied();
+        return true;
+      }catch(e){
+        statusText.textContent = 'Otomatik kopyalama engellendi — aşağıdaki butona dokun.';
+        return false;
+      }
+    }
+
+    // Try immediately (works on many mobile browsers when the page was opened via a tap/link).
+    tryCopy();
+
+    // Fallback: guaranteed user-gesture copy via button.
+    manualBtn.addEventListener('click', tryCopy);
+
+    // Extra fallback: first tap anywhere on the page also counts as a gesture.
+    document.addEventListener('click', function onceHandler(){
+      tryCopy();
+    }, { once:true });
+
+    document.getElementById('backLink').addEventListener('click', () => {
+      window.location.href = window.location.pathname;
+    });
+
+  } else {
+    // ---------- GENERATOR MODE ----------
+    const ibanInput = document.getElementById('ibanInput');
+    const ibanHint = document.getElementById('ibanHint');
+    const generateBtn = document.getElementById('generateBtn');
+    const qrCard = document.getElementById('qrCard');
+    const qrHolder = document.getElementById('qrHolder');
+    const linkText = document.getElementById('linkText');
+    const copyLinkBtn = document.getElementById('copyLinkBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    let qrInstance = null;
+
+    generateBtn.addEventListener('click', () => {
+      const iban = cleanIban(ibanInput.value);
+      if(!iban){
+        ibanHint.textContent = 'Lütfen bir IBAN gir.';
+        ibanHint.classList.add('err');
+        return;
+      }
+      if(!isValidIban(iban)){
+        ibanHint.textContent = 'Bu, standart bir IBAN biçimine benzemiyor — yine de QR oluşturulacak.';
+        ibanHint.classList.add('err');
+      } else {
+        ibanHint.textContent = 'Biçim geçerli görünüyor.';
+        ibanHint.classList.remove('err');
+      }
+
+      const targetUrl = window.location.origin + window.location.pathname + '?iban=' + encodeURIComponent(iban);
+
+      qrHolder.innerHTML = '';
+      qrInstance = new QRCode(qrHolder, {
+        text: targetUrl,
+        width: 220,
+        height: 220,
+        colorDark: '#0a0f1c',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+
+      linkText.value = targetUrl;
+      qrCard.classList.add('show');
+    });
+
+    copyLinkBtn.addEventListener('click', async () => {
+      try{
+        await navigator.clipboard.writeText(linkText.value);
+        copyLinkBtn.textContent = 'Kopyalandı';
+        setTimeout(() => copyLinkBtn.textContent = 'Kopyala', 1500);
+      }catch(e){}
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      const canvas = qrHolder.querySelector('canvas');
+      if(!canvas) return;
+      const link = document.createElement('a');
+      link.download = 'iban-qr.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+
+    ibanInput.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter') generateBtn.click();
+    });
+  }
+</script>
+</body>
+</html>
