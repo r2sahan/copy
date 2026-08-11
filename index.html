@@ -120,13 +120,6 @@
     background:var(--surface-2); color:var(--text); border-radius:980px; padding:13px 16px;
   }
 
-  .deploy-note{
-    margin-top:28px; background:var(--surface); border-radius:16px;
-    padding:16px 18px; font-size:12.5px; line-height:1.6; color:var(--text-secondary);
-    box-shadow:var(--shadow-sm);
-  }
-  .deploy-note b{color:var(--text);}
-
   /* ---------- AUTO-COPY LANDING VIEW ---------- */
   #copyView{display:none; text-align:center;}
   #copyView.show{display:block;}
@@ -168,13 +161,27 @@
     position:relative; z-index:1;
     font-size:16px; font-weight:600; margin-top:22px;
     color:rgba(255,255,255,0.92); letter-spacing:-0.005em;
+    cursor:pointer; padding:4px 0; transition:opacity 0.15s ease;
+    display:flex; align-items:center; gap:8px;
   }
+  .wallet-name:active{opacity:0.6;}
   .wallet-iban{
     position:relative; z-index:1;
     font-family:var(--font-mono); font-size:19px; font-weight:500;
     letter-spacing:0.02em; word-break:break-all; margin-top:6px; color:#fff;
-    line-height:1.5;
+    line-height:1.5; cursor:pointer; padding:4px 0; transition:opacity 0.15s ease;
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
   }
+  .wallet-iban:active, .wallet-name:active{opacity:0.55;}
+  .tap-hint{
+    font-size:12px; color:var(--text-secondary); margin-top:14px;
+    letter-spacing:-0.005em; text-align:center;
+  }
+  .check-icon{
+    width:15px; height:15px; flex-shrink:0; opacity:0; transition:opacity 0.15s ease;
+    color:var(--success);
+  }
+  .check-icon.show{opacity:1;}
 
   .copy-status-row{
     display:flex; align-items:center; justify-content:center; gap:8px;
@@ -230,10 +237,6 @@
         <button class="btn-secondary" id="downloadBtn">PNG İndir</button>
       </div>
     </div>
-
-    <div class="deploy-note">
-      <b>Önemli:</b> Bu sayfa şu an tarayıcı önizlemesinde açık. Başka telefonların kamerasıyla okutabilmen için gerçek bir alan adına (GitHub Pages, Vercel, Netlify vb.) yayınlaman gerekir.
-    </div>
   </div>
 
   <!-- ============ AUTO-COPY LANDING ============ -->
@@ -246,20 +249,22 @@
         <span class="wallet-label">IBAN</span>
         <div class="wallet-chip"></div>
       </div>
-      <div class="wallet-name" id="accountNameText" style="display:none;"></div>
-      <div class="wallet-iban" id="copyIbanText">—</div>
+      <div class="wallet-name" id="accountNameText" style="display:none;">
+        <span id="accountNameLabel"></span>
+        <svg class="check-icon" id="nameCheck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+      </div>
+      <div class="wallet-iban" id="copyIbanText">
+        <span id="ibanLabel">—</span>
+        <svg class="check-icon" id="ibanCheck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+      </div>
     </div>
+    <p class="tap-hint">Kopyalamak için hesap adına veya IBAN'a dokun</p>
 
     <div class="copy-status-row">
       <span class="status-dot" id="statusDot"></span>
       <span class="copy-status-text" id="copyStatusText">Otomatik kopyalama deneniyor…</span>
     </div>
 
-    <button class="btn-manual" id="manualCopyBtn">Panoya Kopyala</button>
-
-    <div>
-      <span class="back-link" id="backLink">← QR oluşturucuya dön</span>
-    </div>
   </div>
 
 </div>
@@ -287,47 +292,46 @@
     copyView.classList.add('show');
 
     const iban = cleanIban(ibanParam);
-    document.getElementById('copyIbanText').textContent = isValidIban(iban) ? formatIban(iban) : iban;
+    const ibanDisplay = isValidIban(iban) ? formatIban(iban) : iban;
+    document.getElementById('ibanLabel').textContent = ibanDisplay;
     document.title = 'IBAN Kopyalandı';
 
     const nameParam = params.get('ad');
     if(nameParam){
-      const nameEl = document.getElementById('accountNameText');
-      nameEl.textContent = nameParam;
-      nameEl.style.display = 'block';
+      document.getElementById('accountNameLabel').textContent = nameParam;
+      document.getElementById('accountNameText').style.display = 'flex';
     }
 
     const statusText = document.getElementById('copyStatusText');
     const statusDot = document.getElementById('statusDot');
     const titleEl = document.getElementById('copyTitle');
-    const manualBtn = document.getElementById('manualCopyBtn');
+    const ibanRow = document.getElementById('copyIbanText');
+    const nameRow = document.getElementById('accountNameText');
+    const ibanCheck = document.getElementById('ibanCheck');
+    const nameCheck = document.getElementById('nameCheck');
 
-    function markCopied(){
-      titleEl.textContent = 'Panoya Kopyalandı';
-      statusText.textContent = 'Dilediğin uygulamaya yapıştırabilirsin';
-      statusDot.classList.add('ok');
-      manualBtn.textContent = 'Tekrar Kopyala';
-      manualBtn.classList.add('copied');
-    }
-
-    async function tryCopy(){
+    async function copyValue(text, checkEl, label){
       try{
-        await navigator.clipboard.writeText(iban);
-        markCopied();
+        await navigator.clipboard.writeText(text);
+        titleEl.textContent = 'Panoya Kopyalandı';
+        statusText.textContent = label + ' kopyalandı';
+        statusDot.classList.add('ok');
+        [ibanCheck, nameCheck].forEach(el => el.classList.remove('show'));
+        checkEl.classList.add('show');
         return true;
       }catch(e){
-        statusText.textContent = 'Otomatik kopyalama engellendi, butona dokun';
+        statusText.textContent = 'Kopyalama engellendi, tekrar dokun';
         return false;
       }
     }
 
-    tryCopy();
-    manualBtn.addEventListener('click', tryCopy);
-    document.addEventListener('click', function onceHandler(){ tryCopy(); }, { once:true });
+    // Auto-copy the IBAN on load.
+    copyValue(iban, ibanCheck, 'IBAN');
 
-    document.getElementById('backLink').addEventListener('click', () => {
-      window.location.href = window.location.pathname;
-    });
+    ibanRow.addEventListener('click', () => copyValue(iban, ibanCheck, 'IBAN'));
+    if(nameParam){
+      nameRow.addEventListener('click', () => copyValue(nameParam, nameCheck, 'Ad'));
+    }
 
   } else {
     // ---------- GENERATOR MODE ----------
