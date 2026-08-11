@@ -207,6 +207,39 @@
   }
   .status-dot.ok{background:var(--success);}
   .copy-status-text{font-size:14px; color:var(--text-secondary); letter-spacing:-0.005em;}
+  .copy-title {
+    position: relative;
+    display: inline-block;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    color: #1d1d1f;
+    margin: 0 0 8px 0;
+    padding: 0;
+    text-align: center;
+    background: linear-gradient(180deg, #1d1d1f 0%, #434344 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    z-index: 1;
+  }
+  .copy-title::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    left: -2px;
+    right: 6px;
+    top: 14px;
+    bottom: -4px;
+    border-top: 3px solid rgb(245 245 245 / 45%);
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    box-shadow: 0 -6px 15px rgb(80 82 85 / 25%);
+    filter: blur(2px);
+    pointer-events: none;
+  }
 </style>
 </head>
 <body>
