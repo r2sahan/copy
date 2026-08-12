@@ -45,8 +45,10 @@
     -webkit-font-smoothing:antialiased;
     min-height:100vh;
     display:flex;
-    justify-content:center;
-    padding:48px 20px 80px;
+    flex-direction:column;
+    align-items:center;
+    justify-content:space-between;
+    padding:48px 20px 32px;
   }
   .app{width:100%; max-width:420px;}
 
@@ -203,10 +205,10 @@
   .wallet-card{
     position:relative;
     background:var(--surface);
-    border-radius:24px;
+    border-radius:20px;
     overflow:hidden;
     box-shadow:var(--shadow-md);
-    margin-top:20px;
+    margin-top:16px;
     border:1px solid var(--border);
   }
   .wallet-card-stripe{
@@ -216,27 +218,31 @@
   }
   .wallet-header{
     display:flex; align-items:center; gap:12px;
-    padding:22px 24px 18px;
+    padding:16px 20px;
+    cursor:pointer;
+    transition:background 0.12s ease;
   }
+  .wallet-header:active{background:var(--surface-2);}
   .wallet-icon{
-    width:40px; height:40px; border-radius:12px; flex-shrink:0;
+    width:38px; height:38px; border-radius:12px; flex-shrink:0;
     background:var(--accent);
     display:flex; align-items:center; justify-content:center;
     box-shadow:0 4px 10px rgba(0,0,0,0.12);
     transition:background 0.3s ease;
   }
-  .wallet-icon svg{width:20px; height:20px; color:#fff;}
-  .wallet-header-text{text-align:left;}
+  .wallet-icon svg{width:18px; height:18px; color:#fff;}
+  .wallet-header-text{text-align:left; flex:1; min-width:0;}
   .wallet-header-text .wallet-eyebrow{
-    font-size:11.5px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase;
+    font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase;
     color:var(--text-secondary);
   }
   .wallet-header-text .wallet-heading{
     font-size:15px; font-weight:600; color:var(--text); margin-top:1px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
 
   .wallet-row{
-    padding:16px 24px;
+    padding:14px 20px;
     border-top:1px solid var(--border);
     cursor:pointer;
     display:flex; align-items:center; justify-content:space-between; gap:14px;
@@ -245,15 +251,11 @@
   .wallet-row:active{background:var(--surface-2);}
   .wallet-row-text{min-width:0; text-align:left;}
   .wallet-row-label{
-    font-size:11.5px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;
-    color:var(--text-secondary); margin-bottom:4px;
-  }
-  .wallet-row-value{
-    font-size:17px; font-weight:600; color:var(--text); letter-spacing:-0.005em;
-    word-break:break-word;
+    font-size:11px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;
+    color:var(--text-secondary); margin-bottom:3px;
   }
   .wallet-row-value.mono{
-    font-family:var(--font-mono); font-size:15.5px; font-weight:500; letter-spacing:0.01em;
+    font-family:var(--font-mono); font-size:15px; font-weight:500; letter-spacing:0.01em;
     word-break:break-all;
   }
   .check-icon{
@@ -261,23 +263,46 @@
     transition:opacity 0.15s ease, transform 0.15s ease;
     color:var(--success);
   }
-  .check-icon.show{opacity:1; transform:scale(1);}
+  .check-icon.show{opacity:0.9; transform:scale(1);}
 
   .tap-hint{
-    font-size:12.5px; color:var(--text-secondary); margin-top:16px;
-    letter-spacing:-0.005em; text-align:center;
+    font-size:13px;
+    color:var(--text-secondary);
+    margin-top:24px;
+    margin-bottom:32px;
+    letter-spacing:-0.005em;
+    text-align:center;
   }
 
-  .copy-status-row{
-    display:flex; align-items:center; justify-content:center; gap:8px;
-    margin:22px 0 18px;
+  /* ---------- FIXED LIGHT TOAST MESSAGE ---------- */
+  .toast-notification {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.92);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    color: var(--text);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    padding: 14px;
+    border-radius: 980px;
+    font-size: 14.5px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.04);
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .status-dot{
-    width:8px; height:8px; border-radius:50%; background:var(--text-secondary);
-    transition:background 0.2s ease;
+  .toast-notification.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
   }
-  .status-dot.ok{background:var(--success);}
-  .copy-status-text{font-size:14px; color:var(--text-secondary); letter-spacing:-0.005em;}
+
   .copy-title {
     position: relative;
     display: inline-block;
@@ -310,6 +335,15 @@
     box-shadow: 0 -6px 15px rgb(80 82 85 / 25%);
     filter: blur(2px);
     pointer-events: none;
+  }
+
+  footer {
+    margin-top: 40px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+    letter-spacing: -0.005em;
+    opacity: 0.8;
   }
 </style>
 </head>
@@ -354,15 +388,16 @@
     <div id="walletCardsContainer"></div>
 
     <p class="tap-hint">Kopyalamak istediğiniz bilginin üzerine dokunun</p>
-
-    <div class="copy-status-row">
-      <span class="status-dot" id="statusDot"></span>
-      <span class="copy-status-text" id="copyStatusText">Otomatik kopyalama deneniyor…</span>
-    </div>
-
   </div>
 
+  <!-- Ekran Ortasında Beliren Açık Renkli Opak Toast Bildirim -->
+  <div class="toast-notification" id="toastMsg">Kopyalandı</div>
+
 </div>
+
+<footer>
+  © IBAN Hazır
+</footer>
 
 <script>
   const BANK_MAP = {
@@ -398,6 +433,7 @@
 
   const generatorView = document.getElementById('generatorView');
   const copyView = document.getElementById('copyView');
+  const toastMsg = document.getElementById('toastMsg');
 
   const params = new URLSearchParams(window.location.search);
 
@@ -421,7 +457,17 @@
     return null;
   }
 
-  // Doğrudan yeni i ve a parametrelerini kontrol et
+  // Toast Bildirim Gösterme Fonksiyonu
+  let toastTimeout;
+  function showToast(text) {
+    toastMsg.textContent = text;
+    toastMsg.classList.add('show');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+      toastMsg.classList.remove('show');
+    }, 2000);
+  }
+
   let accounts = [];
   const iParam = params.get('i');
   const aParam = params.get('a');
@@ -461,19 +507,16 @@
     copyView.classList.add('show');
 
     const container = document.getElementById('walletCardsContainer');
-    const statusText = document.getElementById('copyStatusText');
-    const statusDot = document.getElementById('statusDot');
 
     async function copyValue(text, checkEl, labelText){
       try{
         await navigator.clipboard.writeText(text);
-        statusText.textContent = labelText + ' kopyalandı';
-        statusDot.classList.add('ok');
+        showToast(labelText + ' Kopyalandı');
         document.querySelectorAll('.check-icon').forEach(el => el.classList.remove('show'));
         if(checkEl) checkEl.classList.add('show');
         return true;
       }catch(e){
-        statusText.textContent = 'Kopyalama engellendi, tekrar dokun';
+        showToast('Kopyalama engellendi');
         return false;
       }
     }
@@ -489,7 +532,7 @@
       card.className = 'wallet-card';
       card.innerHTML = `
         <div class="wallet-card-stripe" style="background:${bankColor}"></div>
-        <div class="wallet-header">
+        <div class="wallet-header header-row-${index}">
           <div class="wallet-icon" style="background:${bankColor}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"></rect><path d="M2 10h20"></path></svg>
           </div>
@@ -497,15 +540,8 @@
             <div class="wallet-eyebrow">${bankName}</div>
             <div class="wallet-heading">${acc.ad ? acc.ad : 'Hesap ' + (index + 1)}</div>
           </div>
-        </div>
-        ${acc.ad ? `
-        <div class="wallet-row name-row-${index}">
-          <div class="wallet-row-text">
-            <div class="wallet-row-label">Hesap Sahibi</div>
-            <div class="wallet-row-value">${acc.ad}</div>
-          </div>
           <svg class="check-icon check-name-${index}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
-        </div>` : ''}
+        </div>
         <div class="wallet-row iban-row-${index}">
           <div class="wallet-row-text">
             <div class="wallet-row-label">IBAN</div>
@@ -522,12 +558,12 @@
 
       if(acc.ad){
         const nameCheck = card.querySelector(`.check-name-${index}`);
-        const nameRow = card.querySelector(`.name-row-${index}`);
-        nameRow.addEventListener('click', () => copyValue(acc.ad, nameCheck, 'Hesap adı'));
+        const headerRow = card.querySelector(`.header-row-${index}`);
+        headerRow.addEventListener('click', () => copyValue(acc.ad, nameCheck, 'Hesap Adı'));
       }
 
       if(index === 0){
-        copyValue(iban, ibanCheck, 'İlk IBAN');
+        copyValue(iban, ibanCheck, 'IBAN');
       }
     });
 
