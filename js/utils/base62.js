@@ -34,32 +34,59 @@ export function decodeBase62(str) {
 }
 
 /**
- * Sadece rakamlardan oluşan TR IBAN'ı sıkıştırır.
- * TRXX YYYY Y... (24 hane rakam) -> BigInt -> Base62
+ * TR123123... -> "TR" + encodeBase62("123123...")
  */
 export function compressIban(cleanIbanStr) {
-  // TR ile başlamıyorsa veya 26 karakter değilse ham halini döndür/işle
-  if (!cleanIbanStr.startsWith('TR') || cleanIbanStr.length !== 26) {
+  if (!cleanIbanStr) return '';
+  
+  // TR ile başlamıyorsa ham halini döndür
+  if (!cleanIbanStr.startsWith('TR')) {
     return cleanIbanStr;
   }
-  // TR kısmını atıp kalan 24 haneli rakamı alıyoruz
+
+  // TR kısmını ayır, kalan rakamları al
   const numericPart = cleanIbanStr.substring(2);
-  return encodeBase62(BigInt(numericPart));
+  
+  // Sadece rakamlardan oluşuyorsa Base62 yap
+  if (/^\d+$/.test(numericPart)) {
+    const b62 = encodeBase62(BigInt(numericPart));
+    return 'TR' + b62; // TR ile birleştirip döndür
+  }
+
+  return cleanIbanStr;
 }
 
 /**
- * Sıkıştırılmış Base62 IBAN'ı tekrar standart TR IBAN'a dönüştürür.
+ * TRaxzdas -> "TR" ve "axzdas" ayır -> decodeBase62("axzdas") -> "123123" -> TR123123...
  */
-export function decompressIban(b62Str) {
-  try {
-    const num = decodeBase62(b62Str);
-    let numericStr = num.toString();
-    // Eksik basamakları 24 haneye tamamla (soluna 0 ekle)
-    while (numericStr.length < 24) {
-      numericStr = '0' + numericStr;
+export function decompressIban(str) {
+  if (!str) return '';
+
+  // "TR" ile başlıyorsa "TR" ve Base62 kısmını ayırıyoruz
+  if (str.startsWith('TR')) {
+    const b62Part = str.substring(2);
+
+    // Eğer b62Part zaten sadece rakamlardan oluşuyorsa ham IBAN'dır (sıkıştırılmamıştır)
+    if (/^\d+$/.test(b62Part)) {
+      return str;
     }
-    return 'TR' + numericStr;
-  } catch (e) {
-    return b62Str; // Çözülemezse olduğu gibi döndür
+
+    try {
+      // Base62 kısmını çöz ve BigInt -> Rakam string'ine çevir
+      const num = decodeBase62(b62Part);
+      let numericStr = num.toString();
+
+      // Standart TR IBAN 24 rakamdan oluşur, gerekirse soluna 0 ekle
+      while (numericStr.length < 24) {
+        numericStr = '0' + numericStr;
+      }
+
+      return 'TR' + numericStr;
+    } catch (e) {
+      console.error('Base62 çözme hatası:', e);
+      return str;
+    }
   }
+
+  return str;
 }
