@@ -7,6 +7,7 @@
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
+
   gtag('config', 'G-WSQDTTF0JP');
 </script>
 <meta charset="UTF-8">
@@ -91,37 +92,6 @@
   button:active{transform:scale(0.97); opacity:0.9;}
   button:disabled{opacity:0.4; cursor:not-allowed;}
 
-  .legal-consent{
-    display:flex;
-    align-items:flex-start;
-    gap:10px;
-    margin:8px 4px 10px;
-    color:var(--text-secondary);
-    font-size:11.5px;
-    line-height:1.45;
-  }
-  .legal-consent input{
-    width:16px;
-    height:16px;
-    margin:1px 0 0;
-    flex-shrink:0;
-    accent-color:var(--accent);
-    cursor:pointer;
-  }
-  .legal-consent label{
-    cursor:pointer;
-    font-weight:400 !important;
-    color:var(--text-secondary) !important;
-    margin:0 !important;
-  }
-  .legal-consent strong{
-    font-weight:600;
-    color:var(--text-secondary);
-  }
-  .legal-consent.err{
-    color:var(--danger);
-  }
-
   .btn-pill{
     width:100%; background:var(--accent); color:#fff;
     padding:15px 18px; border-radius:980px; margin-top:6px;
@@ -163,76 +133,6 @@
     background:var(--surface-2); color:var(--text); border-radius:980px; padding:13px 16px;
   }
   
-  .account-form{
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:20px;
-    padding:20px;
-    margin-bottom:12px;
-    box-shadow:var(--shadow-sm);
-  }
-  .account-form-title{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    font-size:14px;
-    font-weight:700;
-    margin-bottom:18px;
-  }
-  .account-form:not(:first-child) .account-form-title{
-    color:var(--text);
-  }
-  .account-form .field-group:last-child{margin-bottom:0;}
-  .account-form-actions{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    margin-top:4px;
-  }
-  .same-name-label{
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-    font-size:13px;
-    color:var(--text-secondary);
-    cursor:pointer;
-    user-select:none;
-  }
-  .same-name-checkbox{
-    width:18px;
-    height:18px;
-    accent-color:var(--accent);
-  }
-  .remove-account-btn{
-    background:transparent;
-    color:var(--danger);
-    font-size:12.5px;
-    padding:6px 2px;
-  }
-  .add-account-btn{
-    width:100%;
-    background:var(--surface);
-    color:var(--accent);
-    border:1px dashed rgba(0,113,227,0.35);
-    border-radius:980px;
-    padding:13px 18px;
-    margin:4px 0 10px;
-    font-size:14px;
-  }
-  .add-account-btn:hover{background:rgba(0,113,227,0.04);}
-  .add-account-btn span{font-size:18px; vertical-align:-1px;}
-  .wallet-card + .wallet-card{margin-top:14px;}
-  .wallet-card-number{
-    font-size:11px;
-    font-weight:700;
-    color:var(--text-secondary);
-    margin-left:auto;
-    background:var(--surface-2);
-    padding:5px 9px;
-    border-radius:980px;
-  }
-
   /* ---------- AUTO-COPY LANDING VIEW ---------- */
   #copyView{display:none; text-align:center;}
   #copyView.show{display:block;}
@@ -359,42 +259,22 @@
     <h1 class="copy-title">IBAN Hazır</h1>
     <p class="sub">IBAN'ını gir, linkli bir QR kod oluşsun. Telefonun kendi kamerasıyla okutulduğunda IBAN otomatik olarak panoya kopyalanır.</p>
 
-    <div id="accountsForm">
-      <div class="account-form" data-account-index="0">
-        <div class="account-form-title">
-          <span>Ana Hesap</span>
-        </div>
+    <div class="field-group">
+      <label for="nameInput">Hesap Sahibi (opsiyonel)</label>
+      <input id="nameInput" type="text" placeholder="Örn. Ahmet Yılmaz" autocomplete="off">
+    </div>
 
-        <div class="field-group">
-          <label>Hesap Adı</label>
-          <input class="name-input" type="text" placeholder="Örn. Ahmet Yılmaz" autocomplete="off">
-        </div>
-
-        <div class="field-group">
-          <label>IBAN</label>
-          <input class="iban-input" type="text" placeholder="TR33 0006 1005 1978 6457 8413 26" autocomplete="off" autocapitalize="characters">
-          <div class="bank-badge" style="display:none;">
-            <span class="bank-dot"></span>
-            <span class="bank-badge-name"></span>
-          </div>
-          <div class="hint iban-hint">Boşluklu ya da boşluksuz girebilirsin.</div>
-        </div>
+    <div class="field-group">
+      <label for="ibanInput">IBAN</label>
+      <input id="ibanInput" type="text" placeholder="TR33 0006 1005 1978 6457 8413 26" autocomplete="off" autocapitalize="characters">
+      <div id="bankBadge" class="bank-badge" style="display:none;">
+        <span id="bankDot" class="bank-dot"></span>
+        <span id="bankBadgeName"></span>
       </div>
+      <div class="hint" id="ibanHint">Boşluklu ya da boşluksuz girebilirsin.</div>
     </div>
 
-    <button class="add-account-btn" id="addAccountBtn" type="button">
-      <span>＋</span> Hesap Ekle
-    </button>
-
-    <div class="legal-consent" id="legalConsent">
-      <input id="legalConsentCheckbox" type="checkbox">
-      <label for="legalConsentCheckbox">
-        QR kodu oluşturarak ve paylaşarak ilgili hesap bilgilerinin doğruluğu, kullanımı ve paylaşımından
-        <strong>tüm sorumluluğun size ait olduğunu</strong> kabul ediyorum.
-      </label>
-    </div>
-
-    <button class="btn-pill" id="generateBtn" disabled>QR Kod Oluştur</button>
+    <button class="btn-pill" id="generateBtn">QR Kod Oluştur</button>
 
     <div class="qr-section" id="qrCard">
       <div id="qrHolder"></div>
@@ -413,7 +293,34 @@
   <div id="copyView">
     <h1 class="copy-title">IBAN Hazır</h1>
 
-    <div id="walletCards"></div>
+    <div class="wallet-card">
+      <div class="wallet-card-stripe" id="cardStripe"></div>
+      <div class="wallet-header">
+        <div class="wallet-icon" id="cardWalletIcon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"></rect><path d="M2 10h20"></path></svg>
+        </div>
+        <div class="wallet-header-text">
+          <div class="wallet-eyebrow" id="bankNameLabel">Transfer Bilgisi</div>
+          <div class="wallet-heading">Hesap Bilgileri</div>
+        </div>
+      </div>
+
+      <div class="wallet-row" id="accountNameText" style="display:none;">
+        <div class="wallet-row-text">
+          <div class="wallet-row-label">Hesap Sahibi</div>
+          <div class="wallet-row-value" id="accountNameLabel"></div>
+        </div>
+        <svg class="check-icon" id="nameCheck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+      </div>
+
+      <div class="wallet-row" id="copyIbanText">
+        <div class="wallet-row-text">
+          <div class="wallet-row-label">IBAN</div>
+          <div class="wallet-row-value mono" id="ibanLabel">—</div>
+        </div>
+        <svg class="check-icon" id="ibanCheck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+      </div>
+    </div>
     <p class="tap-hint">Tekrar kopyalamak için hesap adına veya IBAN'a dokun</p>
 
     <div class="copy-status-row">
