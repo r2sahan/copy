@@ -15,6 +15,9 @@
 <title>IBAN Hazır</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230071e3'/%3E%3Cstop offset='1' stop-color='%235e5ce6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='url(%23g)'/%3E%3Crect x='22' y='33' width='56' height='38' rx='7' fill='white'/%3E%3Crect x='22' y='33' width='56' height='11' rx='4' fill='%230071e3'/%3E%3Crect x='30' y='55' width='22' height='6' rx='3' fill='%23c9def7'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- LZ-String Kütüphanesi (Sıkıştırma için) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+
 <style>
   :root{
     --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -55,7 +58,7 @@
   }
   .sub{
     color:var(--text-secondary); font-size:15px; line-height:1.5;
-    margin:0 0 32px; letter-spacing:-0.005em;
+    margin:0 0 24px; letter-spacing:-0.005em;
   }
 
   /* ---------- GENERATOR VIEW ---------- */
@@ -64,14 +67,14 @@
     display:block; font-size:13px; font-weight:600; color:var(--text-secondary);
     margin-bottom:8px; letter-spacing:-0.005em;
   }
-  #ibanInput, #nameInput{
+  .iban-input, .name-input{
     width:100%; background:var(--surface-2); border:1px solid transparent;
     color:var(--text); font-family:var(--font-sans); font-size:17px;
     letter-spacing:-0.01em; padding:14px 16px; border-radius:14px; outline:none;
     transition:box-shadow 0.15s ease, background 0.15s ease;
   }
-  #ibanInput{font-family:var(--font-mono); font-size:15px; letter-spacing:0.01em;}
-  #ibanInput:focus, #nameInput:focus{
+  .iban-input{font-family:var(--font-mono); font-size:15px; letter-spacing:0.01em;}
+  .iban-input:focus, .name-input:focus{
     background:var(--surface); box-shadow:0 0 0 4px rgba(0,113,227,0.14), 0 0 0 1px var(--accent);
   }
   .hint{font-size:12.5px; color:var(--text-secondary); margin-top:8px; letter-spacing:-0.005em;}
@@ -83,6 +86,57 @@
     background:var(--surface-2); color:var(--text); transition:all 0.2s ease;
   }
   .bank-dot{width:8px; height:8px; border-radius:50%; background:var(--accent);}
+
+  /* Dinamik IBAN Kartları */
+  .iban-card-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 16px;
+    margin-bottom: 16px;
+    position: relative;
+    box-shadow: var(--shadow-sm);
+  }
+  .iban-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .iban-card-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+  .btn-remove {
+    background: transparent;
+    border: none;
+    color: var(--danger);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 2px 6px;
+  }
+
+  /* Yasal Uyarı Metni Stili */
+  .legal-notice {
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+    text-align: left;
+    letter-spacing: -0.005em;
+  }
+  .legal-notice strong {
+    color: var(--text);
+    font-weight: 600;
+  }
 
   button{
     font-family:var(--font-sans); font-weight:600; font-size:15px;
@@ -97,6 +151,17 @@
     padding:15px 18px; border-radius:980px; margin-top:6px;
   }
   .btn-pill:hover{background:var(--accent-press);}
+
+  .btn-add {
+    width: 100%;
+    background: var(--surface);
+    color: var(--accent);
+    border: 1px dashed var(--accent);
+    padding: 12px;
+    border-radius: 16px;
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
 
   .qr-section{
     display:none;
@@ -137,7 +202,6 @@
   #copyView{display:none; text-align:center;}
   #copyView.show{display:block;}
 
-  /* Transfer card */
   .wallet-card{
     position:relative;
     background:var(--surface);
@@ -257,21 +321,17 @@
   <!-- ============ GENERATOR ============ -->
   <div id="generatorView">
     <h1 class="copy-title">IBAN Hazır</h1>
-    <p class="sub">IBAN'ını gir, linkli bir QR kod oluşsun. Telefonun kendi kamerasıyla okutulduğunda IBAN otomatik olarak panoya kopyalanır.</p>
+    <p class="sub">IBAN'larını gir, sıkıştırılmış QR kod oluşsun. Kamera ile okutulduğunda ilk IBAN otomatik kopyalanır.</p>
 
-    <div class="field-group">
-      <label for="nameInput">Hesap Sahibi (opsiyonel)</label>
-      <input id="nameInput" type="text" placeholder="Örn. Ahmet Yılmaz" autocomplete="off">
-    </div>
+    <!-- Çoklu IBAN Alanı Container -->
+    <div id="ibanContainer"></div>
 
-    <div class="field-group">
-      <label for="ibanInput">IBAN</label>
-      <input id="ibanInput" type="text" placeholder="TR33 0006 1005 1978 6457 8413 26" autocomplete="off" autocapitalize="characters">
-      <div id="bankBadge" class="bank-badge" style="display:none;">
-        <span id="bankDot" class="bank-dot"></span>
-        <span id="bankBadgeName"></span>
-      </div>
-      <div class="hint" id="ibanHint">Boşluklu ya da boşluksuz girebilirsin.</div>
+    <button class="btn-add" id="addIbanBtn">+ Başka Bir IBAN Ekle</button>
+    <div class="hint" id="ibanHint" style="margin-bottom:12px;"></div>
+
+    <!-- Yasal Uyarı Metni -->
+    <div class="legal-notice">
+      <strong>Yasal Uyarı:</strong> Oluşturulan QR koddaki IBAN ve hesap bilgilerinin doğruluğu tamamen kullanıcının sorumluluğundadır. Hatalı veya eksik bilgi paylaşımından doğabilecek hatalı para transferlerinden platformumuz sorumlu tutulamaz. Lütfen QR kodu paylaşmadan önce bilgileri kontrol ediniz.
     </div>
 
     <button class="btn-pill" id="generateBtn">QR Kod Oluştur</button>
@@ -293,35 +353,9 @@
   <div id="copyView">
     <h1 class="copy-title">IBAN Hazır</h1>
 
-    <div class="wallet-card">
-      <div class="wallet-card-stripe" id="cardStripe"></div>
-      <div class="wallet-header">
-        <div class="wallet-icon" id="cardWalletIcon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"></rect><path d="M2 10h20"></path></svg>
-        </div>
-        <div class="wallet-header-text">
-          <div class="wallet-eyebrow" id="bankNameLabel">Transfer Bilgisi</div>
-          <div class="wallet-heading">Hesap Bilgileri</div>
-        </div>
-      </div>
+    <div id="walletCardsContainer"></div>
 
-      <div class="wallet-row" id="accountNameText" style="display:none;">
-        <div class="wallet-row-text">
-          <div class="wallet-row-label">Hesap Sahibi</div>
-          <div class="wallet-row-value" id="accountNameLabel"></div>
-        </div>
-        <svg class="check-icon" id="nameCheck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
-      </div>
-
-      <div class="wallet-row" id="copyIbanText">
-        <div class="wallet-row-text">
-          <div class="wallet-row-label">IBAN</div>
-          <div class="wallet-row-value mono" id="ibanLabel">—</div>
-        </div>
-        <svg class="check-icon" id="ibanCheck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
-      </div>
-    </div>
-    <p class="tap-hint">Tekrar kopyalamak için hesap adına veya IBAN'a dokun</p>
+    <p class="tap-hint">Kopyalamak istediğiniz bilginin üzerine dokunun</p>
 
     <div class="copy-status-row">
       <span class="status-dot" id="statusDot"></span>
@@ -368,7 +402,8 @@
   const copyView = document.getElementById('copyView');
 
   const params = new URLSearchParams(window.location.search);
-  const ibanParam = params.get('iban');
+  const dataParam = params.get('d');
+  const legacyIban = params.get('iban');
 
   function cleanIban(raw){
     return (raw || '').replace(/\s+/g, '').toUpperCase();
@@ -390,42 +425,35 @@
     return null;
   }
 
-  if(ibanParam){
-    // ---------- AUTO-COPY MODE ----------
+  if(dataParam || legacyIban){
+    // ---------- AUTO-COPY LANDING MODE ----------
     generatorView.style.display = 'none';
     copyView.classList.add('show');
 
-    const iban = cleanIban(ibanParam);
-    const ibanDisplay = isValidIban(iban) ? formatIban(iban) : iban;
-    document.getElementById('ibanLabel').textContent = ibanDisplay;
+    let accounts = [];
 
-    const bank = getBankInfo(iban);
-    if(bank){
-      document.getElementById('bankNameLabel').textContent = bank.name;
-      document.getElementById('cardStripe').style.background = bank.color;
-      document.getElementById('cardWalletIcon').style.background = bank.color;
+    if(dataParam) {
+      try {
+        const decompressed = LZString.decompressFromEncodedURIComponent(dataParam);
+        accounts = JSON.parse(decompressed);
+      } catch(e) {
+        console.error("Veri çözülemedi", e);
+      }
+    } else if(legacyIban) {
+      accounts = [{ iban: legacyIban, ad: params.get('ad') || '' }];
     }
 
-    const nameParam = params.get('ad');
-    if(nameParam){
-      document.getElementById('accountNameLabel').textContent = nameParam;
-      document.getElementById('accountNameText').style.display = 'flex';
-    }
-
+    const container = document.getElementById('walletCardsContainer');
     const statusText = document.getElementById('copyStatusText');
     const statusDot = document.getElementById('statusDot');
-    const ibanRow = document.getElementById('copyIbanText');
-    const nameRow = document.getElementById('accountNameText');
-    const ibanCheck = document.getElementById('ibanCheck');
-    const nameCheck = document.getElementById('nameCheck');
 
-    async function copyValue(text, checkEl, label){
+    async function copyValue(text, checkEl, labelText){
       try{
         await navigator.clipboard.writeText(text);
-        statusText.textContent = label + ' kopyalandı';
+        statusText.textContent = labelText + ' kopyalandı';
         statusDot.classList.add('ok');
-        [ibanCheck, nameCheck].forEach(el => el.classList.remove('show'));
-        checkEl.classList.add('show');
+        document.querySelectorAll('.check-icon').forEach(el => el.classList.remove('show'));
+        if(checkEl) checkEl.classList.add('show');
         return true;
       }catch(e){
         statusText.textContent = 'Kopyalama engellendi, tekrar dokun';
@@ -433,62 +461,155 @@
       }
     }
 
-    // Auto-copy the IBAN on load.
-    copyValue(iban, ibanCheck, 'IBAN');
+    accounts.forEach((acc, index) => {
+      const iban = cleanIban(acc.iban);
+      const ibanDisplay = isValidIban(iban) ? formatIban(iban) : iban;
+      const bank = getBankInfo(iban);
+      const bankName = bank ? bank.name : 'Transfer Bilgisi';
+      const bankColor = bank ? bank.color : 'var(--accent)';
 
-    ibanRow.addEventListener('click', () => copyValue(iban, ibanCheck, 'IBAN'));
-    if(nameParam){
-      nameRow.addEventListener('click', () => copyValue(nameParam, nameCheck, 'Hesap adı'));
-    }
+      const card = document.createElement('div');
+      card.className = 'wallet-card';
+      card.innerHTML = `
+        <div class="wallet-card-stripe" style="background:${bankColor}"></div>
+        <div class="wallet-header">
+          <div class="wallet-icon" style="background:${bankColor}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"></rect><path d="M2 10h20"></path></svg>
+          </div>
+          <div class="wallet-header-text">
+            <div class="wallet-eyebrow">${bankName}</div>
+            <div class="wallet-heading">${acc.ad ? acc.ad : 'Hesap ' + (index + 1)}</div>
+          </div>
+        </div>
+        ${acc.ad ? `
+        <div class="wallet-row name-row-${index}">
+          <div class="wallet-row-text">
+            <div class="wallet-row-label">Hesap Sahibi</div>
+            <div class="wallet-row-value">${acc.ad}</div>
+          </div>
+          <svg class="check-icon check-name-${index}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+        </div>` : ''}
+        <div class="wallet-row iban-row-${index}">
+          <div class="wallet-row-text">
+            <div class="wallet-row-label">IBAN</div>
+            <div class="wallet-row-value mono">${ibanDisplay}</div>
+          </div>
+          <svg class="check-icon check-iban-${index}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+        </div>
+      `;
+      container.appendChild(card);
+
+      const ibanCheck = card.querySelector(`.check-iban-${index}`);
+      const ibanRow = card.querySelector(`.iban-row-${index}`);
+      ibanRow.addEventListener('click', () => copyValue(iban, ibanCheck, 'IBAN'));
+
+      if(acc.ad){
+        const nameCheck = card.querySelector(`.check-name-${index}`);
+        const nameRow = card.querySelector(`.name-row-${index}`);
+        nameRow.addEventListener('click', () => copyValue(acc.ad, nameCheck, 'Hesap adı'));
+      }
+
+      if(index === 0){
+        copyValue(iban, ibanCheck, 'İlk IBAN');
+      }
+    });
 
   } else {
     // ---------- GENERATOR MODE ----------
-    const ibanInput = document.getElementById('ibanInput');
-    const nameInput = document.getElementById('nameInput');
-    const ibanHint = document.getElementById('ibanHint');
-    const bankBadge = document.getElementById('bankBadge');
-    const bankBadgeName = document.getElementById('bankBadgeName');
-    const bankDot = document.getElementById('bankDot');
-
+    const ibanContainer = document.getElementById('ibanContainer');
+    const addIbanBtn = document.getElementById('addIbanBtn');
     const generateBtn = document.getElementById('generateBtn');
+    const ibanHint = document.getElementById('ibanHint');
     const qrCard = document.getElementById('qrCard');
     const qrHolder = document.getElementById('qrHolder');
     const linkText = document.getElementById('linkText');
     const copyLinkBtn = document.getElementById('copyLinkBtn');
     const downloadBtn = document.getElementById('downloadBtn');
 
-    // IBAN input dynamic bank detection
-    ibanInput.addEventListener('input', () => {
-      const bank = getBankInfo(ibanInput.value);
-      if(bank){
-        bankBadgeName.textContent = bank.name;
-        bankDot.style.background = bank.color;
-        bankBadge.style.display = 'inline-flex';
-      } else {
-        bankBadge.style.display = 'none';
-      }
+    let cardCount = 0;
+
+    function addIbanCard(initialName = '', initialIban = '') {
+      cardCount++;
+      const cardId = cardCount;
+      const card = document.createElement('div');
+      card.className = 'iban-card-item';
+      card.id = `ibanCard_${cardId}`;
+      
+      card.innerHTML = `
+        <div class="iban-card-header">
+          <span class="iban-card-title">Hesap #${cardId}</span>
+          ${cardId > 1 ? `<button class="btn-remove" onclick="removeIbanCard(${cardId})">Sil</button>` : ''}
+        </div>
+        <div class="field-group" style="margin-bottom:12px;">
+          <input class="name-input" type="text" placeholder="Hesap Sahibi (opsiyonel)" value="${initialName}">
+        </div>
+        <div class="field-group" style="margin-bottom:0;">
+          <input class="iban-input" type="text" placeholder="TR33 0006 1005 1978 6457 8413 26" value="${initialIban}">
+          <div class="bank-badge" style="display:none;">
+            <span class="bank-dot"></span>
+            <span class="bank-badge-name"></span>
+          </div>
+        </div>
+      `;
+
+      ibanContainer.appendChild(card);
+
+      const ibanInput = card.querySelector('.iban-input');
+      const bankBadge = card.querySelector('.bank-badge');
+      const bankBadgeName = card.querySelector('.bank-badge-name');
+      const bankDot = card.querySelector('.bank-dot');
+
+      ibanInput.addEventListener('input', () => {
+        const bank = getBankInfo(ibanInput.value);
+        if(bank){
+          bankBadgeName.textContent = bank.name;
+          bankDot.style.background = bank.color;
+          bankBadge.style.display = 'inline-flex';
+        } else {
+          bankBadge.style.display = 'none';
+        }
+      });
+    }
+
+    window.removeIbanCard = function(id) {
+      const card = document.getElementById(`ibanCard_${id}`);
+      if(card) card.remove();
+    };
+
+    addIbanCard();
+
+    addIbanBtn.addEventListener('click', () => {
+      addIbanCard();
     });
 
     generateBtn.addEventListener('click', () => {
-      const iban = cleanIban(ibanInput.value);
-      if(!iban){
-        ibanHint.textContent = 'Lütfen bir IBAN gir.';
+      const cards = ibanContainer.querySelectorAll('.iban-card-item');
+      const accountList = [];
+      let hasValid = false;
+
+      cards.forEach(card => {
+        const nameVal = card.querySelector('.name-input').value.trim();
+        const ibanVal = cleanIban(card.querySelector('.iban-input').value);
+
+        if(ibanVal) {
+          hasValid = true;
+          accountList.push({ ad: nameVal, iban: ibanVal });
+        }
+      });
+
+      if(!hasValid) {
+        ibanHint.textContent = 'Lütfen en az bir geçerli IBAN girin.';
         ibanHint.classList.add('err');
         return;
       }
-      if(!isValidIban(iban)){
-        ibanHint.textContent = 'Bu, standart bir IBAN biçimine benzemiyor — yine de QR oluşturulacak.';
-        ibanHint.classList.add('err');
-      } else {
-        ibanHint.textContent = 'Biçim geçerli görünüyor.';
-        ibanHint.classList.remove('err');
-      }
 
-      const accountName = nameInput.value.trim();
-      let targetUrl = window.location.origin + window.location.pathname + '?iban=' + encodeURIComponent(iban);
-      if(accountName){
-        targetUrl += '&ad=' + encodeURIComponent(accountName);
-      }
+      ibanHint.textContent = '';
+      ibanHint.classList.remove('err');
+
+      const jsonStr = JSON.stringify(accountList);
+      const compressed = LZString.compressToEncodedURIComponent(jsonStr);
+
+      const targetUrl = window.location.origin + window.location.pathname + '?d=' + compressed;
 
       qrHolder.innerHTML = '';
       new QRCode(qrHolder, {
@@ -519,10 +640,6 @@
       link.download = 'iban-qr.png';
       link.href = canvas.toDataURL('image/png');
       link.click();
-    });
-
-    ibanInput.addEventListener('keydown', (e) => {
-      if(e.key === 'Enter') generateBtn.click();
     });
   }
 </script>
