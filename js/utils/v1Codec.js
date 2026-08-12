@@ -1,9 +1,8 @@
 import { compressIban, decompressIban } from './base62.js';
 
 /**
- * Accounts dizisini v1 formatında kısa bir string'e dönüştürür.
- * Yapı Örneği: iban1~isim1|iban2~isim2
- * İsim tekrarlarında "1" bayrağı kullanılır.
+ * Accounts dizisini v1 formatına dönüştürür.
+ * Çıktı Örneği: TRaxzdas~Ahmet|TR3c8k9~Mehmet
  */
 export function encodeV1Data(accounts) {
   let lastVal = null;
@@ -12,7 +11,7 @@ export function encodeV1Data(accounts) {
     const compressedIban = compressIban(acc.iban);
     let namePart = acc.ad || '';
 
-    // İsim tekrarı kontrolü (v0'daki "1" mantığı)
+    // İsim tekrarı kontrolü ("1" flag'i)
     if (lastVal !== null && namePart !== '' && namePart === lastVal) {
       namePart = '1';
     } else if (namePart !== '') {
@@ -22,12 +21,11 @@ export function encodeV1Data(accounts) {
     return namePart ? `${compressedIban}~${encodeURIComponent(namePart)}` : compressedIban;
   });
 
-  // Hesapları pipe '|' karakteri ile birleştiriyoruz
   return payloadParts.join('|');
 }
 
 /**
- * v1 string parametresini çözer ve [ { iban, ad }, ... ] formatında döndürür.
+ * v1 d parametresini çözer
  */
 export function decodeV1Data(dParam) {
   if (!dParam) return null;
@@ -36,12 +34,14 @@ export function decodeV1Data(dParam) {
     const cardTokens = dParam.split('|');
     let lastValidName = '';
 
-    return cardTokens.map(token => {
+    const accounts = cardTokens.map(token => {
+      if (!token) return null;
+
       const parts = token.split('~');
-      const compressedIban = parts[0];
+      const compressedIbanWithTR = parts[0];
       let rawName = parts[1] ? decodeURIComponent(parts[1]) : '';
 
-      // İsim çözümleme
+      // İsim çözme
       if (rawName === '1') {
         rawName = lastValidName;
       } else if (rawName !== '') {
@@ -49,10 +49,12 @@ export function decodeV1Data(dParam) {
       }
 
       return {
-        iban: decompressIban(compressedIban),
+        iban: decompressIban(compressedIbanWithTR),
         ad: rawName
       };
-    });
+    }).filter(acc => acc && acc.iban);
+
+    return accounts.length > 0 ? accounts : null;
   } catch (e) {
     console.error('v1 verisi çözülemedi:', e);
     return null;
