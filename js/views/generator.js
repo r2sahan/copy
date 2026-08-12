@@ -1,4 +1,5 @@
 import { cleanIban, getBankInfo } from '../utils/iban.js';
+import { encodeV1Data } from '../utils/v1Codec.js'; // <-- EKLENDİ
 
 export function initGeneratorView() {
   const ibanContainer = document.getElementById('ibanContainer');
@@ -66,22 +67,18 @@ export function initGeneratorView() {
 
   generateBtn.addEventListener('click', () => {
     const cards = ibanContainer.querySelectorAll('.iban-card-item');
-    const ibanList = [];
-    const rawNameList = [];
-    let hasValid = false;
+    const accounts = [];
 
     cards.forEach(card => {
       const nameVal = card.querySelector('.name-input').value.trim();
       const ibanVal = cleanIban(card.querySelector('.iban-input').value);
 
       if (ibanVal) {
-        hasValid = true;
-        ibanList.push(ibanVal);
-        rawNameList.push(nameVal);
+        accounts.push({ iban: ibanVal, ad: nameVal });
       }
     });
 
-    if (!hasValid) {
+    if (accounts.length === 0) {
       ibanHint.textContent = 'Lütfen en az bir geçerli IBAN girin.';
       ibanHint.classList.add('err');
       return;
@@ -90,25 +87,9 @@ export function initGeneratorView() {
     ibanHint.textContent = '';
     ibanHint.classList.remove('err');
 
-    let hasAnyName = false;
-    let lastVal = null;
-    const compressedNameList = rawNameList.map(name => {
-      if (name) hasAnyName = true;
-      if (lastVal !== null && name !== '' && name === lastVal) {
-        return "1";
-      } else {
-        lastVal = name;
-        return name;
-      }
-    });
-
-    // Şimdilik v0 URL yapısını üretiyoruz
-    let queryParts = [`i=${encodeURIComponent(JSON.stringify(ibanList))}`];
-    if (hasAnyName) {
-      queryParts.push(`a=${encodeURIComponent(JSON.stringify(compressedNameList))}`);
-    }
-
-    const targetUrl = window.location.origin + window.location.pathname + '?' + queryParts.join('&');
+    // === v1 Sıkıştırılmış Parametre Üretimi ===
+    const v1Payload = encodeV1Data(accounts);
+    const targetUrl = `${window.location.origin}${window.location.pathname}?v=1&d=${v1Payload}`;
 
     qrHolder.innerHTML = '';
     new QRCode(qrHolder, {
@@ -128,7 +109,7 @@ export function initGeneratorView() {
     try {
       await navigator.clipboard.writeText(linkText.value);
       copyLinkBtn.textContent = 'Kopyalandı';
-      setTimeout(() => copyLinkBtn.textContent = 'Kopyala', 1500);
+      setTimeout(() => (copyLinkBtn.textContent = 'Kopyala'), 1500);
     } catch (e) {}
   });
 
